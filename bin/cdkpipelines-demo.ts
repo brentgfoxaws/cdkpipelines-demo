@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { App } from '@aws-cdk/core';
-import { CdkpipelinesDemoPipelineStack } from '../lib/cdkpipelines-demo-pipeline-stack';
+import { CdkpipelinesDemoPipelineStack } from '../lib/cdkpipelines-demo-stack';
 
 const app = new App();
 
