@@ -1,32 +1,35 @@
-import { Construct, SecretValue, Stack, StackProps } from '@aws-cdk/core';
-import { CodePipeline, CodePipelineSource, ShellStep } from "@aws-cdk/pipelines";
+import * as apigw from '@aws-cdk/aws-apigateway';
+import * as lambda from '@aws-cdk/aws-lambda';
+import { CfnOutput, Construct, Stack, StackProps } from '@aws-cdk/core';
+import * as path from 'path';
 
 /**
- * The stack that defines the application pipeline
+ * A stack for our simple Lambda-powered web service
  */
-export class CdkpipelinesDemoPipelineStack extends Stack {
+export class CdkpipelinesDemoStack extends Stack {
+  /**
+   * The URL of the API Gateway endpoint, for use in the integ tests
+   */
+  public readonly urlOutput: CfnOutput;
+ 
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    const pipeline = new CodePipeline(this, 'Pipeline', {
-      // The pipeline name
-      pipelineName: 'MyServicePipeline',
-
-       // How it will be built and synthesized
-       synth: new ShellStep('Synth', {
-         // Where the source can be found
-         input: CodePipelineSource.gitHub('brentgfox/cdkpipelines-demo', 'main'),
-         
-         // Install dependencies, build and run cdk synth
-         commands: [
-           'npm ci',
-           'npm run build',
-           'npx cdk synth'
-         ],
-       }),
+    // The Lambda function that contains the functionality
+    const handler = new lambda.Function(this, 'Lambda', {
+      runtime: lambda.Runtime.NODEJS_12_X,
+      handler: 'handler.handler',
+      code: lambda.Code.fromAsset(path.resolve(__dirname, 'lambda')),
     });
 
-    // This is where we add the application stages
-    // ...
+    // An API Gateway to make the Lambda web-accessible
+    const gw = new apigw.LambdaRestApi(this, 'Gateway', {
+      description: 'Endpoint for a simple Lambda-powered web service for GoA',
+      handler,
+    });
+
+    this.urlOutput = new CfnOutput(this, 'Url', {
+      value: gw.url,
+    });
   }
 }
